@@ -1,0 +1,313 @@
+xquery version "1.0-ml";
+xdmp:document-insert("/admin/config/feeds.xml",
+<feed-config xmlns="http://www.marklogic.com/intel/feeds">
+  <collectors>
+    <collector id="col-1">
+      <name>twitter</name>
+      <summary>Fetches XML content from a remote URL</summary>
+      <java>com.marklogic.presales.feeds.URLFeed</java>
+    </collector>
+  </collectors>
+  <feeds>
+    <feed id="feed-1">
+      <source>twitter</source>
+      <name>Tweets about the West Midlands</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>myfeed</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>"West Midlands"</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/twitter/westmidlands/</value>
+  </param>
+      </params>
+    </feed>
+    
+    
+    <feed id="feed-chesterfield-medical">
+      <source>twitter</source>
+      <name>Tweets about medical issues near Chesterfield</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>geo</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>flu OR diarrhoea OR sick OR vomiting OR ache OR pain OR headache OR nausea OR cough OR fever OR tired OR stomach OR sore throat OR runny nose OR blocked nose OR sneeze OR sneezing OR appetite OR sleep OR heart OR meningitis OR natal OR prenatal OR postnatal</value>
+  </param>
+  <param>
+    <name>latitude</name>
+    <value>53.235530</value>
+  </param>
+  <param>
+    <name>longitude</name>
+    <value>-1.422558</value>
+  </param>
+  <param>
+    <name>radiusmiles</name>
+    <value>25</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/twitter/chesterfieldmedical/</value>
+  </param>
+      </params>
+    </feed>
+    
+    
+    
+    
+    <feed id="feed-2">
+      <source>facebook</source>
+      <name>Facebook posts about the West Midlands</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>West Midlands</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/westmidlands/</value>
+  </param>
+      </params>
+    </feed>
+    
+    <feed id="feed-3">
+      <source>facebook</source>
+      <name>Facebook posts about Dudley</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>Dudley</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/dudley/</value>
+  </param>
+      </params>
+    </feed>
+    
+    <feed id="feed-4">
+      <source>facebook</source>
+      <name>Facebook posts about Wolverhampton</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>Wolverhampton</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/wolverhampton/</value>
+  </param>
+      </params>
+    </feed>
+    
+    <feed id="feed-5">
+      <source>facebook</source>
+      <name>Facebook posts about Birmingham</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>Birmingham</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/birmingham/</value>
+  </param>
+      </params>
+    </feed>
+    
+    <feed id="feed-6">
+      <source>facebook</source>
+      <name>Facebook posts about Walsall</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>Walsall</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/walsall/</value>
+  </param>
+      </params>
+    </feed>
+    
+    <feed id="feed-7">
+      <source>facebook</source>
+      <name>Facebook posts about Brownhills</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>Brownhills</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/brownhills/</value>
+  </param>
+      </params>
+    </feed>
+  
+  
+  
+  
+  
+    <feed id="feed-8">
+      <source>facebook</source>
+      <name>Facebook posts about Sutton Coldfield</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>Sutton Coldfield</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/suttoncoldfield/</value>
+  </param>
+      </params>
+    </feed>
+    
+    <feed id="feed-9">
+      <source>facebook</source>
+      <name>Facebook posts about Erdington</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>Erdington</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/erdington/</value>
+  </param>
+      </params>
+    </feed>
+    
+    <feed id="feed-10">
+      <source>facebook</source>
+      <name>Facebook posts about Edgbaston</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>Edgbaston</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/edgbaston/</value>
+  </param>
+      </params>
+    </feed>
+    <feed id="feed-11">
+      <source>facebook</source>
+      <name>Facebook posts about Selly Oak</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>Selly Oak</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/sellyoak/</value>
+  </param>
+      </params>
+    </feed>
+    <feed id="feed-12">
+      <source>facebook</source>
+      <name>Facebook posts about Coventry</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>Coventry</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/coventry/</value>
+  </param>
+      </params>
+    </feed>
+    <feed id="feed-13">
+      <source>facebook</source>
+      <name>Facebook posts about Solihull</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>public</value>
+  </param>
+  <param>
+    <name>query</name>
+    <value>Solihull</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/solihull/</value>
+  </param>
+      </params>
+    </feed>
+    
+    
+    
+    <feed id="feed-fb-users">
+      <source>facebook</source>
+      <name>Facebook posts from all known users</name>
+      <params>
+  <param>
+    <name>method</name>
+    <value>usercorpus</value>
+  </param>
+  <param>
+    <name>document-base-uri</name>
+    <value>/feeds/facebook/usercorpus/</value>
+  </param>
+      </params>
+    </feed>
+  </feeds>
+</feed-config>
+);
