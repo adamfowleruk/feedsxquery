@@ -1,19 +1,3 @@
-(:
-Copyright 2012 MarkLogic Corporation
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-:)
-(: Author: Adam Fowler <adam.fowler@marklogic.com> :)
 xquery version "1.0-ml";
 
 module namespace fe = "http://marklogic.com/intel/feeds";
@@ -94,25 +78,25 @@ declare function fe:delete-feed($feedid as xs:string) {
 
 (: PUBLIC FUNCTIONS :)
 (:
- : Executes a feed with the required id. Could be called manually or as a timed activity. 
+ : Executes a feed with the required id. Could be called manually or as a timed activity.
  : Figures out itself when it was last ran in order to save resources.
  : NB all collectors should guarantee that no communication is intercepted twice
  :)
 declare function fe:run-feed-offset($feedid as xs:string,$offset as xs:int) as element(fe:feed-result) {
   let $inlog := xdmp:log(fn:concat("*** fe:run-feed for ",$feedid," at offset ",$offset))
   (: TODO add exception handling in order to fail gracefully :)
-  
+
   (: Get feed config :)
   let $fc := fe:get-feed($feedid)
-  
+
   (: get last ran info :)
   let $lr := fe:get-last-result($feedid)
   let $sincew3c := xs:dateTime($lr/fe:last-ran/text())
   let $since := xs:long(($sincew3c - xs:dateTime("1970-01-01T00:00:00-00:00")) div xs:dayTimeDuration('PT0.001S'))
-  
+
   (: if twitter, run twitter collector :)
   (: NB collectors are responsible themselves for storing intercepts in the DB, not this function :)
-  let $interceptrefs as element(fe:intercept-ref)* := 
+  let $interceptrefs as element(fe:intercept-ref)* :=
     if ($fc/f:source/text() = "twitter") then
       fe:run-collector-twitter($fc,$since) (: pass in unix epoch instead of w3c :)
     else if ($fc/f:source/text() = "twitterprofiles") then
@@ -120,7 +104,7 @@ declare function fe:run-feed-offset($feedid as xs:string,$offset as xs:int) as e
     else if ($fc/f:source/text() = "facebook") then
       fe:run-collector-facebook-posts($fc,$since) (: pass in unix epoch instead of w3c :)
     else ()
-    
+
   (: update last ran info :)
   let $lrn :=
     <feed-result xmlns="http://marklogic.com/intel/feeds">
@@ -131,9 +115,9 @@ declare function fe:run-feed-offset($feedid as xs:string,$offset as xs:int) as e
       {$interceptrefs}
      </collected>
     </feed-result>
-    
+
   let $inres := xdmp:document-insert(fn:concat("/admin/config/feed-results/",(fn:count(/fe:feed-result) + 10 + $offset),".xml"), $lrn) (: todo add feed results collection ref :) (: todo ensure unique id :)
-  
+
   (: return last ran info :)
   return $lrn
 };
@@ -168,9 +152,9 @@ declare function fe:run-collector-facebook-posts($fc as element(f:feed), $since 
   let $inlog := xdmp:log("fe:run-collector-facebook-posts")
   (: FETCH RESULTS :)
   (: load feed parameters :)
-  let $method := $fc/f:params/f:param[./f:name = "method"]/f:value/text() 
+  let $method := $fc/f:params/f:param[./f:name = "method"]/f:value/text()
   let $baseuri := $fc/f:params/f:param[./f:name = "document-base-uri"]/f:value/text()
-  
+
   return
     if ($method = "public") then
       let $q:= $fc/f:params/f:param[./f:name = "query"]/f:value/text()
@@ -181,15 +165,15 @@ declare function fe:run-collector-facebook-posts($fc as element(f:feed), $since 
     else if ($method = "usercorpus") then
       fe:run-collector-facebook-posts-user-corpus($fc,$since,$baseuri)
     else ()
-  
+
 };
 
 declare function fe:run-collector-facebook-posts-user-corpus($fc as element(f:feed), $since as xs:long,$baseuri as xs:string) as element(fe:intercept-ref)* {
- 
+
   let $users := fn:distinct-values((fn:collection("http://marklogic.com/collections/intercepts")/i:intercept)[./i:collector-ref/i:type/text() = "facebook"]/i:sender/i:identity-ref/i:service-id/text()) (: participants would exponentially grow the corpus :)
     let $limit := 1000
   let $log := xdmp:log(fn:concat("fe:run-collector-facebook-posts-user-corpus for ",fn:count($users)," users"))
-  return 
+  return
     for $userid in $users
     let $last := xs:long((xs:dateTime(
       (for $d in (fn:collection("http://marklogic.com/collections/intercepts")/i:intercept)[./i:collector-ref/i:feed = $fc/@id/fn:string() and ./i:sender/i:identity-ref/i:service-id/text() = $userid]/i:message/i:sent
@@ -208,29 +192,29 @@ declare function fe:run-collector-facebook-posts-user-corpus($fc as element(f:fe
 };
 
 declare function fe:run-collector-facebook-posts-feed($fc as element(f:feed), $since as xs:long,$userid,$baseuri as xs:string) as element(fe:intercept-ref)* {
- 
+
   (: get posts in feed :)
   let $limit := 1000
   let $last := xs:long((xs:dateTime(
     (for $d in fn:collection("http://marklogic.com/collections/intercepts")/i:intercept[./i:collector-ref/i:feed = $fc/@id/fn:string()]/i:message/i:sent
       order by $d descending
       return $d)[1]/text()) - xs:dateTime("1970-01-01T00:00:00-00:00")) div xs:dayTimeDuration('PT0.001S'))
-  
+
   let $posts := oauth2:facebookSearchUserPosts($userid,$last,$limit)
-  
+
   let $pxml := json:transform-from-json($posts)
   let $tempinsert := xdmp:document-insert(fn:concat("/admin/temp-facebook-posts-",$fc/@id/fn:string(),".xml"),$pxml)
-  
+
   (: TODO get up to 1000 posts at a time :)
   (: TODO handle mentions :)
-  
+
   return
     for $post at $idx in $pxml/jb:data/jb:json
     return fe:run-collector-facebook-post-to-intercept($fc,$baseuri,$post,$idx)
 };
 
 declare function fe:run-collector-facebook-post-to-intercept($fc as element(f:feed), $baseuri as xs:string,$post as element(jb:json),$idx as xs:long) as element(fe:intercept-ref)? {
-  
+
     (: Ensure each is unique :)
     let $exists := (fn:collection("http://marklogic.com/collections/intercepts")/i:intercept[./i:collector-ref/i:type = "facebook" and ./i:message/i:serviceurl = $post/jb:id])
     return
@@ -240,7 +224,7 @@ declare function fe:run-collector-facebook-post-to-intercept($fc as element(f:fe
         let $author := $post/jb:from/jb:id/text()
         let $authorname := $post/jb:from/jb:name/text()
         let $rawtext := fn:string-join(($post/jb:message/text(),$post/jb:story/text(),$post/jb:link/text(),$post/jb:name/text(),$post/jb:caption/text(),$post/jb:description/text())," :: ")
-        let $created := te:string-to-w3c($post/jb:created__time/text()) 
+        let $created := te:string-to-w3c($post/jb:created__time/text())
         let $intercept :=
       <intercept xmlns="http://www.marklogic.com/intel/intercept">
       <sender>
@@ -263,35 +247,35 @@ declare function fe:run-collector-facebook-post-to-intercept($fc as element(f:fe
       { (: People message is directed to :)
         for $pp in $post/jb:to/jb:data/jb:json
         return
-        
+
       <identity-ref>
       <domain>facebook</domain>
       <identity>{$pp/jb:name/text()}</identity>
       <service-id>{$pp/jb:id/text()}</service-id>
       </identity-ref>
-        
+
       }
       { (: message tags :)
         for $pp in $post/jb:message__tags/jb:*/jb:json[./jb:type = "user"]
         return
-        
+
       <identity-ref>
       <domain>facebook</domain>
       <identity>{$pp/jb:name/text()}</identity>
       <service-id>{$pp/jb:id/text()}</service-id>
       </identity-ref>
-        
+
       }
       { (: People that have liked, and thus read, the post :)
         for $pp in $post/jb:likes/jb:data/jb:json
         return
-        
+
       <identity-ref>
       <domain>facebook</domain>
       <identity>{$pp/jb:name/text()}</identity>
       <service-id>{$pp/jb:id/text()}</service-id>
       </identity-ref>
-        
+
       }
       </participants>
 
@@ -316,19 +300,19 @@ declare function fe:run-collector-facebook-post-to-intercept($fc as element(f:fe
 };
 
 declare function fe:run-collector-facebook-posts-public($fc as element(f:feed), $since as xs:long,$q as xs:string,$baseuri as xs:string) as element(fe:intercept-ref)* {
-  
+
   (: get posts in feed :)
   let $log := xdmp:log(fn:concat("fe:run-collector-facebook-posts-public for ",$fc/@id/fn:string(),", q: ",$q,", baseuri: ",$baseuri))
   let $limit := 1000
   let $last := xs:long((xs:dateTime(
     (for $d in /i:intercept[./i:collector-ref/i:feed = $fc/@id]/i:message/i:sent
       order by $d descending
-      return $d)[1]/text()) - xs:dateTime("1970-01-01T00:00:00-00:00")) div xs:dayTimeDuration('PT0.001S')) 
+      return $d)[1]/text()) - xs:dateTime("1970-01-01T00:00:00-00:00")) div xs:dayTimeDuration('PT0.001S'))
   let $log2 := xdmp:log(fn:concat("limit: ",$limit,", last: ",$last,", q: ",$q))
   let $posts := oauth2:facebookSearchPublicPosts($q,$last,$limit)
   let $pxml := json:transform-from-json($posts)
   let $tempinsert := xdmp:document-insert(fn:concat("/admin/temp-facebook-posts-",fn:string($fc/@id/fn:string()),".xml"),$pxml)
-  
+
   (: TODO get up to 1000 posts at a time :)
   (: TODO handle mentions :)
   let $logp := xdmp:log(fn:concat("fe:run-collector-facebook-posts-public posts received: ",fn:count($pxml/jb:data/jb:json),", JSON: ",$posts))
@@ -339,7 +323,7 @@ declare function fe:run-collector-facebook-posts-public($fc as element(f:feed), 
 
 declare function fe:run-collector-twitter-profiles($fc as element(f:feed), $since as xs:long?) as element(fe:intercept-ref)* {
   let $inlog := xdmp:log("fe:run-collector-twitter-profiles")
-  
+
   let $baseuri := $fc/f:params/f:param[./f:name = "document-base-uri"]/f:value/text()
 
   (: Fetch all unique twitter screen names from intercepts :)
@@ -371,8 +355,8 @@ declare function fe:run-collector-twitter($fc as element(f:feed), $since as xs:l
   let $baseuri := $fc/f:params/f:param[./f:name = "document-base-uri"]/f:value/text()
   let $feedname := $fc/@id/fn:data(.)
   (:
-  let $lastid := 
-    (for $i in /i:intercept[./i:collector-ref/i:type = "twitter"]/i:message/i:serviceurl 
+  let $lastid :=
+    (for $i in /i:intercept[./i:collector-ref/i:type = "twitter"]/i:message/i:serviceurl
     (: (for $i in /i:intercept[./i:collector-ref/i:feed = $fc/@id]/i:message/i:serviceurl:)
     order by xs:long($i/text()) descending
     return $i)[1]/text()
@@ -420,7 +404,7 @@ declare function fe:run-collector-twitter($fc as element(f:feed), $since as xs:l
       let $author := $tweet/jb:user/jb:screen__name
       let $topics := $tweet/jb:entities/jb:hashtags/jb:json/jb:text
       let $users := $tweet/jb:entities/jb:user__mentions/jb:json/jb:screen__name
-      let $coords := $tweet/jb:coordinates/jb:coordinates
+      let $coords := ($tweet/jb:coordinates/jb:coordinates)[1]
       let $rawtext := $tweet/jb:text/text()
       let $intercept :=
       <intercept xmlns="http://www.marklogic.com/intel/intercept">
@@ -429,8 +413,8 @@ declare function fe:run-collector-twitter($fc as element(f:feed), $since as xs:l
       <placename>{$tweet/jb:place/jb:full__name/text()}</placename>
       {if ($coords) then
         <coords>
-        <lon>{$coords[1]}</lon>
-        <lat>{$coords[2]}</lat>
+        <lon>{$coords/jb:item[1]}</lon>
+        <lat>{$coords/jb:item[2]}</lat>
         </coords>
         else ()
       }
@@ -487,4 +471,3 @@ declare function fe:run-collector-twitter($fc as element(f:feed), $since as xs:l
 
       return $intercepts
 };
-
