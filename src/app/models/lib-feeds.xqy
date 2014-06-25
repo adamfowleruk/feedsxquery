@@ -411,10 +411,10 @@ declare function fe:run-collector-twitter($fc as element(f:feed), $since as xs:l
       <sender>
       <location>
       <placename>{$tweet/jb:place/jb:full__name/text()}</placename>
-      {if ($coords) then
+      {if (fn:not(fn:empty($coords))) then
         <coords>
-        <lon>{$coords/jb:item[1]}</lon>
-        <lat>{$coords/jb:item[2]}</lat>
+        <lon>{xs:double($coords/jb:item[1]/text())}</lon>
+        <lat>{xs:double($coords/jb:item[2]/text())}</lat>
         </coords>
         else ()
       }
